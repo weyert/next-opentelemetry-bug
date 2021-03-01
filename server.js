@@ -1,6 +1,6 @@
+const { tracing } = require('./tracing')
 const express = require('express')
 const next = require('next')
-const { tracing } = require('./tracing')
 
 const port = parseInt(process.env.PORT, 10) || 3000
 const dev = process.env.NODE_ENV !== 'production'

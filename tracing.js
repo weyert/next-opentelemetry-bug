@@ -2,13 +2,37 @@ const { NodeTracerProvider } = require('@opentelemetry/node')
 const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api')
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing')
 const { registerInstrumentations } = require('@opentelemetry/instrumentation')
+const { JaegerExporter } = require('@opentelemetry/exporter-jaeger')
+const { JaegerHttpTracePropagator } = require('@opentelemetry/propagator-jaeger')
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http')
+const { ExpressInstrumentation } = require('./instrumentations/express')
 
 const traceProvider = new NodeTracerProvider({})
-diag.setLogger(new DiagConsoleLogger())
-diag.setLogLevel(DiagLogLevel.DEBUG)
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG)
 
 traceProvider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()))
+traceProvider.addSpanProcessor(
+  new SimpleSpanProcessor(
+    new JaegerExporter({
+      serviceName: 'nextjs-blog',
+      endpoint: 'http://127.0.0.1:14268/api/traces',
+      tags: [
+        {
+          key: 'tag-item',
+          value: 'product',
+        },
+      ],
+    }),
+  ),
+)
 traceProvider.register({})
+
+// Enable the instrumentation for the project
+const httpInstrumentation = new HttpInstrumentation()
+httpInstrumentation.enable()
+
+const expressInstrumentation = new ExpressInstrumentation()
+expressInstrumentation.enable()
 
 //
 registerInstrumentations({
